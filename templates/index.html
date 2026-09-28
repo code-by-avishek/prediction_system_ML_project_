@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Diabetes Risk Predictor</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
+</head>
+
+<body>
+
+
+<!-- ================= NAVBAR ================= -->
+
+<header class="navbar">
+
+    <div class="brand">
+
+        <div class="brand-icon">✚</div>
+
+        <div>
+            <strong>DiaPredict</strong>
+            <span>Risk Assessment</span>
+        </div>
+
+    </div>
+
+
+    <nav>
+
+        <a href="#predict" class="nav-link active">
+            <span>⌂</span>
+            Predict
+        </a>
+
+        <a href="#history" class="nav-link">
+            <span>◷</span>
+            History
+        </a>
+
+    </nav>
+
+
+    <button
+        class="theme-btn"
+        id="themeBtn"
+        type="button"
+    >
+        ☾
+    </button>
+
+</header>
+
+
+
+<!-- ================= MAIN ================= -->
+
+<main class="container">
+
+
+    <!-- ================= HERO ================= -->
+
+    <section class="hero" id="predict">
+
+        <div>
+
+            <span class="eyebrow">
+                AI HEALTH ASSESSMENT
+            </span>
+
+            <h1>
+                Diabetes Risk
+                <span>Prediction</span>
+            </h1>
+
+            <p>
+                Enter patient information to get an experimental
+                machine-learning risk estimate.
+            </p>
+
+        </div>
+
+
+        <div class="model-badge">
+
+            <span class="status-dot"></span>
+
+            Best Model
+
+            <strong id="modelName">
+                {{ best_model }}
+            </strong>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- ================= SCORE CARD ================= -->
+
+    <section class="score-card">
+
+        <div class="score-header">
+
+            <div>
+
+                <span class="small-label">
+                    CURRENT ASSESSMENT
+                </span>
+
+                <h2 id="riskStatus">
+
+                    {% if risk_level %}
+                        {{ risk_level }}
+                    {% else %}
+                        Awaiting Data
+                    {% endif %}
+
+                </h2>
+
+            </div>
+
+
+            <div class="score-number">
+
+                <span id="riskScore">
+
+                    {% if prediction_score is not none %}
+                        {{ "%.1f"|format(prediction_score) }}
+                    {% else %}
+                        0
+                    {% endif %}
+
+                </span>
+
+                <small>%</small>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- ================= METER ================= -->
+
+        <div class="meter">
+
+            <div class="meter-track">
+
+                <div
+                    class="meter-fill"
+                    id="meterFill"
+                ></div>
+
+                <div
+                    class="meter-marker"
+                    id="meterMarker"
+                    {% if prediction_score is not none %}
+                        style="left: {{ prediction_score }}%;"
+                    {% else %}
+                        style="left: 0%;"
+                    {% endif %}
+                ></div>
+
+            </div>
+
+
+            <div class="meter-labels">
+
+                <span>Low</span>
+                <span>Moderate</span>
+                <span>High</span>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- ================= MESSAGE ================= -->
+
+        <div
+            class="score-message"
+            id="scoreMessage"
+        >
+
+            {% if prediction_score is not none %}
+
+                {% if prediction_score >= 70 %}
+
+                    The model score is elevated. Further clinical
+                    evaluation is recommended.
+
+                {% elif prediction_score >= 40 %}
+
+                    The model score is moderate. Consider discussing
+                    your results with a healthcare professional.
+
+                {% else %}
+
+                    The model score is lower based on the entered
+                    information.
+
+                {% endif %}
+
+            {% else %}
+
+                Complete the assessment below to generate
+                a risk score.
+
+            {% endif %}
+
+        </div>
+
+    </section>
+
+
+
+    <!-- ================= FORM ================= -->
+
+    <form
+        id="predictionForm"
+        method="POST"
+        action="/"
+    >
+
+        {% if error_message %}
+            <p class="form-error" role="alert">{{ error_message }}</p>
+        {% endif %}
+
+        <!-- ================= PATIENT ================= -->
+
+        <section class="form-card">
+
+            <div class="section-heading">
+
+                <div class="section-number">
+                    01
+                </div>
+
+                <div>
+
+                    <h3>
+                        Patient Information
+                    </h3>
+
+                    <p>
+                        Basic demographic information
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="form-grid">
+
+
+                <div class="input-group">
+
+                    <label>Age</label>
+
+                    <input
+                        type="number"
+                        name="Age"
+                        min="1"
+                        max="120"
+                        placeholder="e.g. 45"
+                        required
+                    >
+
+                </div>
+
+
+
+                <div class="input-group">
+
+                    <label>Gender</label>
+
+                    <select
+                        name="Gender"
+                        required
+                    >
+
+                        <option value="">
+                            Select gender
+                        </option>
+
+                        <option value="Male">
+                            Male
+                        </option>
+
+                        <option value="Female">
+                            Female
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+
+                <div class="input-group">
+
+                    <label>BMI</label>
+
+                    <input
+                        type="number"
+                        name="BMI"
+                        step="0.1"
+                        placeholder="e.g. 24.5"
+                        required
+                    >
+
+                </div>
+
+
+
+                <div class="input-group">
+
+                    <label>
+                        Systolic BP
+                    </label>
+
+                    <div class="input-with-unit">
+
+                        <input
+                            type="number"
+                            name="Systolic_BP"
+                            placeholder="e.g. 120"
+                            required
+                        >
+
+                        <span>
+                            mmHg
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ================= CLINICAL ================= -->
+
+        <section class="form-card">
+
+            <div class="section-heading">
+
+                <div class="section-number">
+                    02
+                </div>
+
+                <div>
+
+                    <h3>
+                        Clinical Measurements
+                    </h3>
+
+                    <p>
+                        Blood glucose and insulin data
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="form-grid">
+
+
+                <div class="input-group">
+
+                    <label>
+                        Fasting Glucose
+                    </label>
+
+                    <div class="input-with-unit">
+
+                        <input
+                            type="number"
+                            name="Fasting_Glucose"
+                            placeholder="e.g. 100"
+                            required
+                        >
+
+                        <span>
+                            mg/dL
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="input-group">
+
+                    <label>
+                        Postmeal Glucose
+                    </label>
+
+                    <div class="input-with-unit">
+
+                        <input
+                            type="number"
+                            name="Postmeal_Glucose"
+                            placeholder="e.g. 140"
+                            required
+                        >
+
+                        <span>
+                            mg/dL
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="input-group">
+
+                    <label>
+                        Insulin Level
+                    </label>
+
+                    <div class="input-with-unit">
+
+                        <input
+                            type="number"
+                            name="Insulin_Level"
+                            placeholder="e.g. 80"
+                            required
+                        >
+
+                        <span>
+                            µU/mL
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ================= LIFESTYLE ================= -->
+
+        <section class="form-card">
+
+            <div class="section-heading">
+
+                <div class="section-number">
+                    03
+                </div>
+
+                <div>
+
+                    <h3>
+                        Lifestyle & Health
+                    </h3>
+
+                    <p>
+                        Daily habits and medical history
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="form-grid">
+
+
+                <!-- PHYSICAL ACTIVITY -->
+
+                <div class="input-group">
+
+                    <label>
+                        Physical Activity
+                    </label>
+
+                    <select
+                        name="Physical_Activity"
+                        required
+                    >
+
+                        <option value="">
+                            Select activity
+                        </option>
+
+                        <option value="Low">
+                            Low
+                        </option>
+
+                        <option value="Moderate">
+                            Moderate
+                        </option>
+
+                        <option value="High">
+                            High
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+
+                <!-- SMOKING -->
+
+                <div class="input-group">
+
+                    <label>
+                        Smoking Status
+                    </label>
+
+                    <select
+                        name="Smoking_Status"
+                        required
+                    >
+
+                        <option value="">
+                            Select status
+                        </option>
+
+                        <option value="Never">
+                            Never
+                        </option>
+
+                        <option value="Former">
+                            Former
+                        </option>
+
+                        <option value="Current">
+                            Current
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+
+                <!-- ALCOHOL -->
+
+                <div class="input-group">
+
+                    <label>
+                        Alcohol Consumption
+                    </label>
+
+                    <select
+                        name="Alcohol_Consumption"
+                        required
+                    >
+
+                        <option value="">
+                            Select level
+                        </option>
+
+                        <option value="Frequent">
+                            Frequent
+                        </option>
+
+                        <option value="Occasional">
+                            Occasional
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+
+                <!-- FAMILY HISTORY -->
+
+                <div class="input-group">
+
+                    <label>
+                        Family History
+                    </label>
+
+                    <select
+                        name="Family_History_Diabetes"
+                        required
+                    >
+
+                        <option value="">
+                            Select
+                        </option>
+
+                        <option value="0">
+                            No
+                        </option>
+
+                        <option value="1">
+                            Yes
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+
+                <!-- HYPERTENSION -->
+
+                <div class="input-group">
+
+                    <label>
+                        Hypertension
+                    </label>
+
+                    <select
+                        name="Hypertension"
+                        required
+                    >
+
+                        <option value="">
+                            Select
+                        </option>
+
+                        <option value="0">
+                            No
+                        </option>
+
+                        <option value="1">
+                            Yes
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+
+                <!-- HEART DISEASE -->
+
+                <div class="input-group">
+
+                    <label>
+                        Heart Disease
+                    </label>
+
+                    <select
+                        name="Heart_Disease"
+                        required
+                    >
+
+                        <option value="">
+                            Select
+                        </option>
+
+                        <option value="0">
+                            No
+                        </option>
+
+                        <option value="1">
+                            Yes
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+
+                <!-- SLEEP -->
+
+                <div class="input-group">
+
+                    <label>
+                        Sleep Hours
+                    </label>
+
+                    <div class="input-with-unit">
+
+                        <input
+                            type="number"
+                            name="Sleep_Hours"
+                            step="0.5"
+                            min="0"
+                            max="24"
+                            placeholder="e.g. 7"
+                            required
+                        >
+
+                        <span>
+                            hours
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- STRESS -->
+
+                <div class="input-group">
+
+                    <label>
+                        Stress Level
+                    </label>
+
+                    <select
+                        name="Stress_Level"
+                        required
+                    >
+
+                        <option value="">
+                            Select stress
+                        </option>
+
+                        <option value="Low">
+                            Low
+                        </option>
+
+                        <option value="Moderate">
+                            Moderate
+                        </option>
+
+                        <option value="High">
+                            High
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+
+                <!-- DIET -->
+
+                <div class="input-group">
+
+                    <label>
+                        Diet Quality
+                    </label>
+
+                    <select
+                        name="Diet_Quality"
+                        required
+                    >
+
+                        <option value="">
+                            Select diet
+                        </option>
+
+                        <option value="Poor">
+                            Poor
+                        </option>
+
+                        <option value="Average">
+                            Average
+                        </option>
+
+                        <option value="Good">
+                            Good
+                        </option>
+
+                    </select>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ================= BUTTON ================= -->
+
+        <button
+            type="submit"
+            class="predict-btn"
+            id="predictBtn"
+        >
+
+            <span class="btn-icon">
+                ✦
+            </span>
+
+            <span>
+                Analyze Diabetes Risk
+            </span>
+
+            <span class="arrow">
+                →
+            </span>
+
+        </button>
+
+    </form>
+
+    <p class="medical-disclaimer">
+        This experimental estimate is not a diagnosis or a calibrated clinical assessment.
+        Consult a qualified healthcare professional about your health.
+    </p>
+
+
+
+    <!-- ================= HISTORY ================= -->
+
+    <section
+        class="history-section"
+        id="history"
+    >
+
+        <div class="history-header">
+
+            <div>
+
+                <span class="small-label">
+                    STORED ASSESSMENTS
+                </span>
+
+                <h2>
+                    Prediction History
+                </h2>
+
+            </div>
+
+
+            <button
+                type="button"
+                class="clear-btn"
+                id="clearHistory"
+            >
+                Clear All
+            </button>
+
+        </div>
+
+
+        <div
+            id="historyList"
+            class="history-list"
+        >
+
+            <div class="empty-history">
+
+                <div class="empty-icon">
+                    ◷
+                </div>
+
+                <h3>
+                    No predictions yet
+                </h3>
+
+                <p>
+                    Your prediction history will appear here.
+                </p>
+
+            </div>
+
+        </div>
+
+    </section>
+
+</main>
+
+
+
+<!-- ================= MOBILE NAV ================= -->
+
+<nav class="mobile-nav">
+
+    <a
+        href="#predict"
+        class="mobile-nav-item active"
+    >
+
+        <span>⌂</span>
+
+        <small>
+            Predict
+        </small>
+
+    </a>
+
+
+    <a
+        href="#history"
+        class="mobile-nav-item"
+    >
+
+        <span>◷</span>
+
+        <small>
+            History
+        </small>
+
+    </a>
+
+
+    <button
+        type="button"
+        class="mobile-nav-item"
+        id="mobileTheme"
+    >
+
+        <span>☾</span>
+
+        <small>
+            Theme
+        </small>
+
+    </button>
+
+</nav>
+
+
+
+<!-- ================= FLASK → JAVASCRIPT ================= -->
+
+<script>
+
+    window.serverPrediction =
+        {% if prediction_score is not none %}
+            {{ prediction_score }}
+        {% else %}
+            null
+        {% endif %};
+
+</script>
+
+
+<!-- ================= JAVASCRIPT ================= -->
+
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+
+
+</body>
+</html>
